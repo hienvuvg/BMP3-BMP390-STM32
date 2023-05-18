@@ -41,13 +41,13 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt) {
 				api_name, rslt);
 		break;
 	case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
-		printf(
-				"API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n",
+		printf("API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n",
 				api_name, rslt);
 		break;
 	default:
 		printf("API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
 		break;
+//		while(1){};
 	}
 }
 
@@ -89,46 +89,44 @@ BMP3_INTF_RET_TYPE bmp3_interface_init(struct bmp3_dev *bmp3, uint8_t intf) {
 
 void BMP390_Init(void) {
 
-
 	int8_t rslt = 0;
+
 	uint8_t settings_sel;
+//	struct bmp3_dev dev; // Original, creats a bug
 	struct bmp3_settings settings = { 0 };
 
 	/* Interface reference is given as a parameter
-	 *		   For I2C : BMP3_I2C_INTF
-	 *		   For SPI : BMP3_SPI_INTF
-	 */
-#if defined(USE_I2C_INTERFACE)
+	*		   For I2C : BMP3_I2C_INTF
+	*		   For SPI : BMP3_SPI_INTF
+	*/
+	#if defined(USE_I2C_INTERFACE)
 	rslt = bmp3_interface_init(&dev, BMP3_I2C_INTF);
 	#elif defined(USE_SPI_INTERFACE)
 	rslt = bmp3_interface_init(&dev, BMP3_SPI_INTF);
-#endif
+	#endif
 	bmp3_check_rslt("bmp3_interface_init", rslt);
 
 	rslt = bmp3_init(&dev);
 	bmp3_check_rslt("bmp3_init", rslt);
 
-	settings.int_settings.drdy_en = BMP3_ENABLE;
+	settings.int_settings.drdy_en = BMP3_DISABLE;
 	settings.press_en = BMP3_ENABLE;
-	settings.temp_en = BMP3_DISABLE;		// Disable temperature reading
+	settings.temp_en = BMP3_ENABLE;
 
-	settings.odr_filter.press_os = BMP3_OVERSAMPLING_16X; 	// BMP3_OVERSAMPLING_4X (4x works well)
-//	settings.odr_filter.temp_os = BMP3_OVERSAMPLING_2X; 	// Enable temperature
-	settings.odr_filter.odr =  BMP3_ODR_12_5_HZ; 			//BMP3_ODR_50_HZ;
-	settings.odr_filter.iir_filter =  BMP3_IIR_FILTER_COEFF_31; // Enable IIR filter, results will be noisy without this
+	settings.odr_filter.press_os = BMP3_OVERSAMPLING_8X;
+	settings.odr_filter.temp_os = BMP3_OVERSAMPLING_8X;
+	settings.odr_filter.odr = BMP3_ODR_12_5_HZ;
 
-//	settings_sel = 	BMP3_SEL_PRESS_EN |
-//					BMP3_SEL_TEMP_EN |		// Enable temperature
-//					BMP3_SEL_PRESS_OS |
-//					BMP3_SEL_TEMP_OS |
-//					BMP3_SEL_ODR |
-//					BMP3_SEL_DRDY_EN;
+	// HV: adding more
+	settings.odr_filter.iir_filter = BMP3_IIR_FILTER_COEFF_7; // Enable IIR filter, results will be noisy without this
 
-	settings_sel = 	BMP3_SEL_PRESS_EN |
-					BMP3_SEL_PRESS_OS |
-					BMP3_SEL_ODR |
-					BMP3_SEL_IIR_FILTER |
-					BMP3_SEL_DRDY_EN;
+	settings_sel = BMP3_SEL_PRESS_EN |
+			BMP3_SEL_TEMP_EN |
+			BMP3_SEL_PRESS_OS |
+			BMP3_SEL_TEMP_OS |
+			BMP3_SEL_IIR_FILTER | // HV: adding more
+//			BMP3_SEL_DRDY_EN | // Data ready interrupt: don't need
+			BMP3_SEL_ODR;// |
 
 	rslt = bmp3_set_sensor_settings(settings_sel, &settings, &dev);
 	bmp3_check_rslt("bmp3_set_sensor_settings", rslt);
@@ -170,29 +168,28 @@ struct bmp3_data BMP390_read(void) {
 	return data;
 }
 
-
 // Convert from Pa to m
 /**************************************************************************/
 /*!
-    @brief Calculates the altitude (in meters).
+ @brief Calculates the altitude (in meters).
 
-    Reads the current atmostpheric pressure (in hPa) from the sensor and
-   calculates via the provided sea-level pressure (in hPa).
+ Reads the current atmostpheric pressure (in hPa) from the sensor and
+ calculates via the provided sea-level pressure (in hPa).
 
-    @param  seaLevel      Sea-level pressure in hPa
-    @return Altitude in meters
-*/
+ @param  seaLevel      Sea-level pressure in hPa
+ @return Altitude in meters
+ */
 /**************************************************************************/
 //float Adafruit_BMP3XX::readAltitude(float seaLevel) {
-  // Equation taken from BMP180 datasheet (page 16):
-  //  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
-
-  // Note that using the equation from wikipedia can give bad results
-  // at high altitude. See this thread for more information:
-  //  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
-float elevation_conversion(double pressure){
-	float atmospheric = pressure/100.0f;
-	float elevation = 44330.0 * (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
+// Equation taken from BMP180 datasheet (page 16):
+//  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
+// Note that using the equation from wikipedia can give bad results
+// at high altitude. See this thread for more information:
+//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
+float elevation_conversion(double pressure) {
+	float atmospheric = pressure / 100.0f;
+	float elevation = 44330.0
+			* (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
 	return elevation;
 }
 

@@ -52,6 +52,10 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 struct bmp3_data data = { 0 };
+__IO uint8_t read_sensor_flag = 0;
+
+double pressure = 0;
+float elevation = 0;
 
 /* USER CODE END PV */
 
@@ -111,18 +115,32 @@ int main(void)
 
   BMP390_Init();
 
+  float elevation_0 = 1001;
+  while(elevation_0 > 1000){
+	  data = BMP390_read();
+	   pressure = data.pressure;
+	   elevation_0 = elevation_conversion(pressure);
+  }
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  data = BMP390_read();
-	  double pressure = data.pressure;
-	  float elevation = elevation_conversion(pressure);
-//	  printf("Data  T: %.2f, P: %.2f Pa, E: %.2fm\n", (data.temperature), (data.pressure), elevation);
-	  printf("Data  P: %.2f Pa, E: %.2fm\n", (pressure), elevation);
-	  HAL_Delay(500);
+	  if(read_sensor_flag){
+		  read_sensor_flag = 0;
+
+		  data = BMP390_read();
+		   pressure = data.pressure;
+		   elevation = elevation_conversion(pressure) - elevation_0;
+
+	//	  printf("Data  T: %.2f, P: %.2f Pa, E: %.2fm\n", (data.temperature), (data.pressure), elevation);
+//		  printf("Data  P: %.2f Pa, E: %.2fm\n", (pressure), elevation);
+//		  printf("%.2f\n", elevation);
+		   printf("%.d\n", (int)(elevation*100));
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -230,7 +248,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -294,13 +312,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : SPI_CS_Pin */
   GPIO_InitStruct.Pin = SPI_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI_CS_GPIO_Port, &GPIO_InitStruct);
 
 }
