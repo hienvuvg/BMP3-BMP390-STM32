@@ -41,7 +41,8 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt) {
 				api_name, rslt);
 		break;
 	case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
-		printf("API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n",
+		printf(
+				"API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n",
 				api_name, rslt);
 		break;
 	default:
@@ -96,14 +97,14 @@ void BMP390_Init(void) {
 	struct bmp3_settings settings = { 0 };
 
 	/* Interface reference is given as a parameter
-	*		   For I2C : BMP3_I2C_INTF
-	*		   For SPI : BMP3_SPI_INTF
-	*/
-	#if defined(USE_I2C_INTERFACE)
+	 *		   For I2C : BMP3_I2C_INTF
+	 *		   For SPI : BMP3_SPI_INTF
+	 */
+#if defined(USE_I2C_INTERFACE)
 	rslt = bmp3_interface_init(&dev, BMP3_I2C_INTF);
 	#elif defined(USE_SPI_INTERFACE)
 	rslt = bmp3_interface_init(&dev, BMP3_SPI_INTF);
-	#endif
+#endif
 	bmp3_check_rslt("bmp3_interface_init", rslt);
 
 	rslt = bmp3_init(&dev);
@@ -121,12 +122,12 @@ void BMP390_Init(void) {
 	settings.odr_filter.iir_filter = BMP3_IIR_FILTER_COEFF_7; // Enable IIR filter, results will be noisy without this
 
 	settings_sel = BMP3_SEL_PRESS_EN |
-			BMP3_SEL_TEMP_EN |
-			BMP3_SEL_PRESS_OS |
-			BMP3_SEL_TEMP_OS |
-			BMP3_SEL_IIR_FILTER | // HV: adding more
+	BMP3_SEL_TEMP_EN |
+	BMP3_SEL_PRESS_OS |
+	BMP3_SEL_TEMP_OS |
+	BMP3_SEL_IIR_FILTER | // HV: adding more
 //			BMP3_SEL_DRDY_EN | // Data ready interrupt: don't need
-			BMP3_SEL_ODR;// |
+			BMP3_SEL_ODR; // |
 
 	rslt = bmp3_set_sensor_settings(settings_sel, &settings, &dev);
 	bmp3_check_rslt("bmp3_set_sensor_settings", rslt);
@@ -137,11 +138,11 @@ void BMP390_Init(void) {
 
 }
 
-struct bmp3_data BMP390_read(void) {
+struct bmp3_data bmp390_getdata(void) {
 	int8_t rslt = 0;
 
 	// Creating data variable
-	struct bmp3_data data = { -1 };
+	struct bmp3_data data = { -1, -1 };
 	struct bmp3_status status = { { 0 } };
 
 	rslt = bmp3_get_status(&status, &dev);
@@ -165,6 +166,7 @@ struct bmp3_data BMP390_read(void) {
 		// EXAMPLE
 //		printf("Data  T: %.2f deg C, P: %.2f Pa\n", (data.temperature), (data.pressure));
 	}
+
 	return data;
 }
 
@@ -190,7 +192,11 @@ float elevation_conversion(double pressure) {
 	float atmospheric = pressure / 100.0f;
 	float elevation = 44330.0
 			* (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
-	return elevation;
+	if (isnan(elevation)) {
+		return -1;
+	} else {
+		return elevation;
+	}
 }
 
 #endif

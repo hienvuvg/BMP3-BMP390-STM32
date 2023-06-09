@@ -11,7 +11,7 @@
 
 
 void BMP390_Init(void);
-struct bmp3_data BMP390_read(void);
+struct bmp3_data bmp390_getdata(void);
 float elevation_conversion(double pressure);
 
 #endif
