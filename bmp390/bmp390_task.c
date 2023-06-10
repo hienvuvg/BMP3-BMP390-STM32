@@ -134,7 +134,7 @@ void BMP390_Init(void) {
 }
 
 /*
- * Return pressure in mhPa, temperature in deg C
+ * Return pressure in Pa, temperature in deg C
  * pressure_hPa = pressure_Pa / 100
  */
 struct bmp3_data bmp390_getdata(void) {
