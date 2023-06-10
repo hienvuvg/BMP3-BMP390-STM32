@@ -830,10 +830,10 @@ struct bmp3_calib_data
 struct bmp3_data
 {
     /*! Compensated temperature */
-    double temperature;
+    double temperature; // unit: deg C
 
     /*! Compensated pressure */
-    double pressure;
+    double pressure; // unit: Pascal (Pa)
 };
 
 #else

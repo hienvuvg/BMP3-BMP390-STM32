@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include "user_define.h"
 
-
 #define I2C_HANDLE	(hi2c1)
 #define SPI_HANDLE	(hspi1)
 #define UART_HANDLE	(huart2)

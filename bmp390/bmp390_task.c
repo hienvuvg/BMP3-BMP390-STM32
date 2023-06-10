@@ -1,6 +1,6 @@
 #include "common_porting.h"
 //#include "cmsis_os.h"
-#include "stm32l4xx_hal.h"
+#include "stm32f4xx_hal.h"
 #include "bmp390_task.h"
 #include "bmp3.h"
 
@@ -23,12 +23,10 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt) {
 		printf("API [%s] Error [%d] : Null pointer\r\n", api_name, rslt);
 		break;
 	case BMP3_E_COMM_FAIL:
-		printf("API [%s] Error [%d] : Communication failure\r\n", api_name,
-				rslt);
+		printf("API [%s] Error [%d] : Communication failure\r\n", api_name, rslt);
 		break;
 	case BMP3_E_INVALID_LEN:
-		printf("API [%s] Error [%d] : Incorrect length parameter\r\n", api_name,
-				rslt);
+		printf("API [%s] Error [%d] : Incorrect length parameter\r\n", api_name, rslt);
 		break;
 	case BMP3_E_DEV_NOT_FOUND:
 		printf("API [%s] Error [%d] : Device not found\r\n", api_name, rslt);
@@ -37,13 +35,10 @@ void bmp3_check_rslt(const char api_name[], int8_t rslt) {
 		printf("API [%s] Error [%d] : Configuration Error\r\n", api_name, rslt);
 		break;
 	case BMP3_W_SENSOR_NOT_ENABLED:
-		printf("API [%s] Error [%d] : Warning when Sensor not enabled\r\n",
-				api_name, rslt);
+		printf("API [%s] Error [%d] : Warning when Sensor not enabled\r\n", api_name, rslt);
 		break;
 	case BMP3_W_INVALID_FIFO_REQ_FRAME_CNT:
-		printf(
-				"API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n",
-				api_name, rslt);
+		printf("API [%s] Error [%d] : Warning when Fifo watermark level is not in limit\r\n", api_name, rslt);
 		break;
 	default:
 		printf("API [%s] Error [%d] : Unknown error code\r\n", api_name, rslt);
@@ -139,7 +134,8 @@ void BMP390_Init(void) {
 }
 
 /*
- * Return pressure in hPa, temperature in deg C
+ * Return pressure in mhPa, temperature in deg C
+ * pressure_hPa = pressure_Pa / 100
  */
 struct bmp3_data bmp390_getdata(void) {
 	int8_t rslt = 0;
@@ -166,16 +162,13 @@ struct bmp3_data bmp390_getdata(void) {
 		rslt = bmp3_get_status(&status, &dev);
 		bmp3_check_rslt("bmp3_get_status", rslt);
 
-		data.pressure /= 100.0f; // convert to hPa
-
-		// EXAMPLE
 //		printf("Data  T: %.2f deg C, P: %.2f Pa\n", (data.temperature), (data.pressure));
 	}
 
 	return data;
 }
 
-// Convert from Pa to m
+// Convert to altitude
 /**************************************************************************/
 /*!
  @brief Calculates the altitude (in meters).
@@ -188,21 +181,44 @@ struct bmp3_data bmp390_getdata(void) {
  */
 /**************************************************************************/
 //float Adafruit_BMP3XX::readAltitude(float seaLevel) {
-// Equation taken from BMP180 datasheet (page 16):
-//  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
-// Note that using the equation from wikipedia can give bad results
-// at high altitude. See this thread for more information:
-//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
-float elevation_conversion(double atmospheric) {
-//	float atmospheric = pressure / 100.0f;
-	float elevation = 44330.0
-			* (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
-	if (isnan(elevation) || atmospheric == -1) {
+// Equation taken from BMP180 datasheet (page 16): http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
+// Note that using the equation from wikipedia can give bad results at high altitude.
+// See this thread for more information: http://forums.adafruit.com/viewtopic.php?f=22&t=58064
+
+float convert_Pa_to_meter(double pressure_Pa) {
+	float atmospheric_hPa = pressure_Pa / 100.0f;
+	float elevation = 44330.0 * (1.0 - pow(atmospheric_hPa / SEA_LEVEL_PRESSURE_HPA, 0.1903));
+	if (isnan(elevation) || pressure_Pa == -1) {
 		return -1;
-	}
-	else {
+	} else {
 		return elevation;
 	}
 }
+
+float convert_mhPa_to_meter(int32_t pressure_mhPa) {
+	float atmospheric = pressure_mhPa / 1000.0f;
+	float elevation = 44330.0 * (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
+	if (isnan(elevation) || pressure_mhPa == -1) {
+		return -1;
+	} else {
+		return elevation;
+	}
+}
+
+int32_t convert_Pa_to_mhPa(double pressure_Pa) {
+	if(pressure_Pa == -1){
+		return -1;
+	}
+	int32_t pressure_mhPa = pressure_Pa * 10.0f;
+	return pressure_mhPa;
+}
+
+struct bmp3_data bmp390_data_check(struct bmp3_data data) {
+	if(data.temperature == -1){
+		data.pressure = -1;
+	}
+	return data;
+}
+
 
 #endif

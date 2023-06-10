@@ -90,28 +90,28 @@ volatile uint8_t int2_flag = 0;
 extern volatile uint16_t bma456_fifo_ready;
 #endif
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (GPIO_Pin == GPIO_PIN_10) //INT1
-	{
-		printf("INT1 Triggered\r\n");
-		int1_flag = 1;
-#if defined(FIFO_WM_INT)
-		bma456_fifo_ready = 1;
-		#endif
-	} else if (GPIO_Pin == GPIO_PIN_3) //INT2
-	{
-		//printf("INT2 Triggered\r\n");
-		int2_flag = 1;
-#if defined(FIFO_WM_INT)
-		#if defined(USE_BMA456)
-		//bma456_fifo_ready = 1;
-		#endif
-	#endif
-	} else if (GPIO_Pin == GPIO_PIN_5) //DRDY_BMM150
-	{
-		printf("DRDY_BMM150 Triggered\r\n");
-	}
-}
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+//	if (GPIO_Pin == GPIO_PIN_10) //INT1
+//	{
+//		printf("INT1 Triggered\r\n");
+//		int1_flag = 1;
+//#if defined(FIFO_WM_INT)
+//		bma456_fifo_ready = 1;
+//		#endif
+//	} else if (GPIO_Pin == GPIO_PIN_3) //INT2
+//	{
+//		//printf("INT2 Triggered\r\n");
+//		int2_flag = 1;
+//#if defined(FIFO_WM_INT)
+//		#if defined(USE_BMA456)
+//		//bma456_fifo_ready = 1;
+//		#endif
+//	#endif
+//	} else if (GPIO_Pin == GPIO_PIN_5) //DRDY_BMM150
+//	{
+//		printf("DRDY_BMM150 Triggered\r\n");
+//	}
+//}
 
 void DelayUs(uint32_t Delay) {
 	uint32_t i;
