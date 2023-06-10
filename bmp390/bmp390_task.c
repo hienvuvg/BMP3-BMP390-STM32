@@ -1,6 +1,6 @@
 #include "common_porting.h"
 //#include "cmsis_os.h"
-#include "stm32f4xx_hal.h"
+#include "stm32l4xx_hal.h"
 #include "bmp390_task.h"
 #include "bmp3.h"
 
@@ -138,6 +138,9 @@ void BMP390_Init(void) {
 
 }
 
+/*
+ * Return pressure in hPa, temperature in deg C
+ */
 struct bmp3_data bmp390_getdata(void) {
 	int8_t rslt = 0;
 
@@ -162,6 +165,8 @@ struct bmp3_data bmp390_getdata(void) {
 		/* NOTE : Read status register again to clear data ready interrupt status */
 		rslt = bmp3_get_status(&status, &dev);
 		bmp3_check_rslt("bmp3_get_status", rslt);
+
+		data.pressure /= 100.0f; // convert to hPa
 
 		// EXAMPLE
 //		printf("Data  T: %.2f deg C, P: %.2f Pa\n", (data.temperature), (data.pressure));
@@ -188,13 +193,14 @@ struct bmp3_data bmp390_getdata(void) {
 // Note that using the equation from wikipedia can give bad results
 // at high altitude. See this thread for more information:
 //  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
-float elevation_conversion(double pressure) {
-	float atmospheric = pressure / 100.0f;
+float elevation_conversion(double atmospheric) {
+//	float atmospheric = pressure / 100.0f;
 	float elevation = 44330.0
 			* (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
-	if (isnan(elevation)) {
+	if (isnan(elevation) || atmospheric == -1) {
 		return -1;
-	} else {
+	}
+	else {
 		return elevation;
 	}
 }
