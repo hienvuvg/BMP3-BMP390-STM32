@@ -1,6 +1,6 @@
 #include "common_porting.h"
 //#include "cmsis_os.h"
-#include "stm32f4xx_hal.h"
+#include "stm32l4xx_hal.h"
 #include "bmp390_task.h"
 #include "bmp3.h"
 
@@ -53,7 +53,7 @@ BMP3_INTF_RET_TYPE bmp3_interface_init(struct bmp3_dev *bmp3, uint8_t intf) {
 	if (bmp3 != NULL) {
 		/* Bus configuration : I2C */
 		if (intf == BMP3_I2C_INTF) {
-			printf("I2C Interface\n");
+			// printf("I2C Interface\n");
 			dev_addr = BMP3_ADDR_I2C_SEC;
 			bmp3->read = SensorAPI_I2Cx_Read;
 			bmp3->write = SensorAPI_I2Cx_Write;
@@ -61,7 +61,7 @@ BMP3_INTF_RET_TYPE bmp3_interface_init(struct bmp3_dev *bmp3, uint8_t intf) {
 		}
 		/* Bus configuration : SPI */
 		else if (intf == BMP3_SPI_INTF) {
-			printf("SPI Interface\n");
+			// printf("SPI Interface\n");
 			dev_addr = 0;
 			bmp3->read = SensorAPI_SPIx_Read;
 			bmp3->write = SensorAPI_SPIx_Write;
@@ -109,12 +109,12 @@ void BMP390_Init(void) {
 	settings.press_en = BMP3_ENABLE;
 	settings.temp_en = BMP3_ENABLE;
 
-	settings.odr_filter.press_os = BMP3_OVERSAMPLING_8X;
-	settings.odr_filter.temp_os = BMP3_OVERSAMPLING_8X;
-	settings.odr_filter.odr = BMP3_ODR_12_5_HZ;
+	settings.odr_filter.press_os = SAMPLING_RATE;
+	settings.odr_filter.temp_os = SAMPLING_RATE;
+	settings.odr_filter.odr = OUTPUT_RATE;
 
 	// HV: adding more
-	settings.odr_filter.iir_filter = BMP3_IIR_FILTER_COEFF_7; // Enable IIR filter, results will be noisy without this
+	settings.odr_filter.iir_filter = IIR_FILTER_COEFF; // Enable IIR filter, results will be noisy without this
 
 	settings_sel = BMP3_SEL_PRESS_EN |
 	BMP3_SEL_TEMP_EN |
@@ -168,7 +168,7 @@ struct bmp3_data bmp390_getdata(void) {
 	return data;
 }
 
-// Convert to altitude
+// Convert from mhPa to m
 /**************************************************************************/
 /*!
  @brief Calculates the altitude (in meters).
@@ -185,9 +185,9 @@ struct bmp3_data bmp390_getdata(void) {
 // Note that using the equation from wikipedia can give bad results at high altitude.
 // See this thread for more information: http://forums.adafruit.com/viewtopic.php?f=22&t=58064
 
-float convert_Pa_to_meter(double pressure_Pa) {
-	float atmospheric_hPa = pressure_Pa / 100.0f;
-	float elevation = 44330.0 * (1.0 - pow(atmospheric_hPa / SEA_LEVEL_PRESSURE_HPA, 0.1903));
+double convert_Pa_to_meter(double pressure_Pa) {
+	double atmospheric_hPa = pressure_Pa / 100.0f;
+	double elevation = 44330.0 * (1.0 - pow(atmospheric_hPa / SEA_LEVEL_PRESSURE_HPA, 0.1903));
 	if (isnan(elevation) || pressure_Pa == -1) {
 		return -1;
 	} else {
@@ -195,9 +195,9 @@ float convert_Pa_to_meter(double pressure_Pa) {
 	}
 }
 
-float convert_mhPa_to_meter(int32_t pressure_mhPa) {
-	float atmospheric = pressure_mhPa / 1000.0f;
-	float elevation = 44330.0 * (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
+double convert_mhPa_to_meter(int32_t pressure_mhPa) {
+	double atmospheric = pressure_mhPa / 1000.0f;
+	double elevation = 44330.0 * (1.0 - pow(atmospheric / SEA_LEVEL_PRESSURE_HPA, 0.1903));
 	if (isnan(elevation) || pressure_mhPa == -1) {
 		return -1;
 	} else {

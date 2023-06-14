@@ -5,7 +5,7 @@
 #include "user_define.h"
 
 #define I2C_HANDLE	(hi2c1)
-#define SPI_HANDLE	(hspi1)
+#define SPI_HANDLE	(hspi2)
 #define UART_HANDLE	(huart2)
 
 #define BUS_TIMEOUT             1000

@@ -4,13 +4,13 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
-#include "stm32f4xx_hal.h"
+#include "stm32l4xx_hal.h"
 #include "common_porting.h"
 #include "main.h"
 
 extern UART_HandleTypeDef huart2;
 extern I2C_HandleTypeDef hi2c1;
-extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi2;
 
 uint8_t GTXBuffer[512], GRXBuffer[2048];
 
